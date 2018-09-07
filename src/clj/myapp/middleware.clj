@@ -1,20 +1,18 @@
 (ns myapp.middleware
   (:require [myapp.env :refer [defaults]]
-            [cheshire.generate :as cheshire]
             [cognitect.transit :as transit]
             [clojure.tools.logging :as log]
             [myapp.layout :refer [error-page]]
             [ring.middleware.anti-forgery :refer [wrap-anti-forgery]]
             [muuntaja.core :as muuntaja]
-            [muuntaja.format.json :refer [json-format]]
-            [muuntaja.format.transit :as transit-format]
             [muuntaja.middleware :refer [wrap-format wrap-params]]
             [myapp.config :refer [env]]
             [ring.middleware.flash :refer [wrap-flash]]
             [immutant.web.middleware :refer [wrap-session]]
             [ring.middleware.defaults :refer [site-defaults wrap-defaults]])
-  (:import 
-           [org.joda.time ReadableInstant]))
+  (:import
+    [com.fasterxml.jackson.datatype.joda JodaModule]
+    [org.joda.time ReadableInstant]))
 
 (defn wrap-internal-error [handler]
   (fn [req]
@@ -40,29 +38,18 @@
     (fn [v] (-> ^ReadableInstant v .getMillis))
     (fn [v] (-> ^ReadableInstant v .getMillis .toString))))
 
-(cheshire/add-encoder
-  org.joda.time.DateTime
-  (fn [c jsonGenerator]
-    (.writeString jsonGenerator (-> ^ReadableInstant c .getMillis .toString))))
-
-(def restful-format-options
-  (update
-    muuntaja/default-options
-    :formats
-    merge
-    {"application/json"
-     json-format
-
-     "application/transit+json"
-     {:decoder [(partial transit-format/make-transit-decoder :json)]
-      :encoder [#(transit-format/make-transit-encoder
-                   :json
-                   (merge
-                     %
-                     {:handlers {org.joda.time.DateTime joda-time-writer}}))]}}))
+(def muuntaja
+  (muuntaja/create
+    (-> muuntaja/default-options
+        (assoc-in
+          [:formats "application/json" :opts :modules]
+          [(JodaModule.)])
+        (assoc-in
+          [:formats "application/transit+json" :encode-opts]
+          {:handlers {org.joda.time.DateTime joda-time-writer}}))))
 
 (defn wrap-formats [handler]
-  (let [wrapped (-> handler wrap-params (wrap-format restful-format-options))]
+  (let [wrapped (-> handler wrap-params (wrap-format muuntaja))]
     (fn [request]
       ;; disable wrap-formats for websockets
       ;; since they're not compatible with this middleware
