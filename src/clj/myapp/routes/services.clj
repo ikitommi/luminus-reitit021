@@ -4,10 +4,10 @@
             [reitit.ring.schema :as ring-schema]
             [reitit.coercion.schema :as schema-coercion]
             [ring.util.http-response :refer :all]
-            [reitit.ring.middleware.muuntaja :as muuntaja]
-            [reitit.ring.middleware.exception :as exception]
-            [reitit.ring.middleware.multipart :as multipart]
-            [myapp.middleware :as middleware]
+            [reitit.ring.middleware.muuntaja :as muuntaja-middleware]
+            [reitit.ring.middleware.exception :as exception-middleware]
+            [reitit.ring.middleware.multipart :as multipart-middleware]
+            [myapp.muuntaja :as muuntaja]
             [ring.middleware.params :as params]
             [schema.core :as s]
             [clojure.java.io :as io]))
@@ -17,23 +17,23 @@
    {:middleware [;; query-params & form-params
                  params/wrap-params
                  ;; content-negotiation
-                 muuntaja/format-negotiate-middleware
+                 muuntaja-middleware/format-negotiate-middleware
                  ;; encoding response body
-                 muuntaja/format-response-middleware
+                 muuntaja-middleware/format-response-middleware
                  ;; exception handling
-                 exception/exception-middleware
+                 exception-middleware/exception-middleware
                  ;; decoding request body
-                 muuntaja/format-request-middleware
+                 muuntaja-middleware/format-request-middleware
                  ;; coercing response bodys
                  coercion/coerce-response-middleware
                  ;; coercing request parameters
                  coercion/coerce-request-middleware
                  ;; multipart
-                 multipart/multipart-middleware]
+                 multipart-middleware/multipart-middleware]
     ;; schema-coercion
     :coercion schema-coercion/coercion
     ;; muuntaja instance to for body encoding & decoding
-    :muuntaja middleware/muuntaja}
+    :muuntaja muuntaja/instance}
 
    ["/swagger.json"
     {:get {:no-doc true

@@ -1,18 +1,14 @@
 (ns myapp.middleware
   (:require [myapp.env :refer [defaults]]
-            [cognitect.transit :as transit]
             [clojure.tools.logging :as log]
             [myapp.layout :refer [error-page]]
             [ring.middleware.anti-forgery :refer [wrap-anti-forgery]]
-            [muuntaja.core :as muuntaja]
             [muuntaja.middleware :refer [wrap-format wrap-params]]
             [myapp.config :refer [env]]
+            [myapp.muuntaja :as muuntaja]
             [ring.middleware.flash :refer [wrap-flash]]
             [immutant.web.middleware :refer [wrap-session]]
-            [ring.middleware.defaults :refer [site-defaults wrap-defaults]])
-  (:import
-    [com.fasterxml.jackson.datatype.joda JodaModule]
-    [org.joda.time ReadableInstant]))
+            [ring.middleware.defaults :refer [site-defaults wrap-defaults]]))
 
 (defn wrap-internal-error [handler]
   (fn [req]
@@ -32,24 +28,8 @@
        {:status 403
         :title "Invalid anti-forgery token"})}))
 
-(def joda-time-writer
-  (transit/write-handler
-    (constantly "m")
-    (fn [v] (-> ^ReadableInstant v .getMillis))
-    (fn [v] (-> ^ReadableInstant v .getMillis .toString))))
-
-(def muuntaja
-  (muuntaja/create
-    (-> muuntaja/default-options
-        (assoc-in
-          [:formats "application/json" :opts :modules]
-          [(JodaModule.)])
-        (assoc-in
-          [:formats "application/transit+json" :encode-opts]
-          {:handlers {org.joda.time.DateTime joda-time-writer}}))))
-
 (defn wrap-formats [handler]
-  (let [wrapped (-> handler wrap-params (wrap-format muuntaja))]
+  (let [wrapped (-> handler wrap-params (wrap-format muuntaja/instance))]
     (fn [request]
       ;; disable wrap-formats for websockets
       ;; since they're not compatible with this middleware
