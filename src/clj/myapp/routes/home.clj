@@ -1,8 +1,7 @@
 (ns myapp.routes.home
   (:require [myapp.layout :as layout]
             [clojure.java.io :as io]
-            [myapp.middleware :as middleware]
-            [ring.util.http-response :as response]))
+            [myapp.middleware :as middleware]))
 
 (defn home-page [_]
   (layout/render
@@ -13,7 +12,8 @@
 
 (defn home-routes []
   [""
-   {:middleware [middleware/wrap-csrf
+   {:no-doc true ;; don't collect to swagger-docs
+    :middleware [middleware/wrap-csrf
                  middleware/wrap-formats]}
    ["/" {:get home-page}]
    ["/about" {:get about-page}]])
