@@ -19,8 +19,8 @@
   (ring/ring-handler
     (ring/router
       ;; routes
-      [(home/home-routes)
-       (services/service-routes)]
+      [(home/routes)
+       (services/routes)]
       ;; common route data for all routes
       {:data {:middleware [middleware/wrap-base]}})
     ;; default routes

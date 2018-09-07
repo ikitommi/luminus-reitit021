@@ -10,7 +10,7 @@
 (defn about-page [_]
   (layout/render "about.html"))
 
-(defn home-routes []
+(defn routes []
   [""
    {:no-doc true ;; don't collect to swagger-docs
     :middleware [middleware/wrap-csrf

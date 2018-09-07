@@ -12,7 +12,7 @@
             [schema.core :as s]
             [clojure.java.io :as io]))
 
-(defn service-routes []
+(defn routes []
   ["/api"
    {:middleware [;; query-params & form-params
                  params/wrap-params
